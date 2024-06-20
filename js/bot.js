@@ -6,23 +6,52 @@ const bishopValue = 325;
 const rookValue = 500;
 const queenValue = 900;
 
+let computations = 0;
 
 function move_bot() {
+  console.log(game);
   const possibleMoves = game.moves();
   if (possibleMoves.length === 0) return;
-  // const result = SearchForBestMove(3);
-  // console.log(result);
+
+  console.time('Total search time');
+  const result = SearchForBestMove(3);
+  console.timeEnd('Total search time');
+  
+  console.log(`Total computations: ${computations}`);
+  computations = 0;
+  console.log('Best move found:', result);
+
   // game.move(result.bestMove);
-  console.log(EvaluatePosition());
 
   checkGameStatus();
   board.position(game.fen());
 }
 
-function SearchForBestMove(depth, alpha, beta) {
-  
-}
+function SearchForBestMove(depth) {
+  if (depth === 0) {
+    return EvaluatePosition();
+  }
 
+  const possibleMoves = game.moves();
+
+  if (possibleMoves.length === 0) {
+    if (game.in_checkmate()) {
+      return -Infinity;
+    }
+    return 0;
+  }
+
+  let bestEvaluation = -Infinity;
+
+  for (const move of possibleMoves) {
+    game.move(move);
+    const evaluation = -SearchForBestMove(depth - 1);
+    bestEvaluation = Math.max(bestEvaluation, evaluation);
+    game.undo();
+  }
+
+  return bestEvaluation;
+}
 
 const EvaluatePosition = () => {
   const whiteMaterial = CountMaterial('w', game);
@@ -53,6 +82,7 @@ function CountMaterial(color, game) {
   };
 
   for (const char of pieces) {
+    computations++;
       if (char in pieceValues) {
           if (color === 'w' && char === char.toUpperCase()) {
               materialCount += pieceValues[char];
